@@ -76,3 +76,8 @@ plt.colorbar(scatter_plot4)
 plt.xlabel("bmi")
 plt.ylabel("glucose")
 plt.show()
+## Dataset splitting
+X, y = dataframe[["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"]], dataframe["Outcome"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=outcome)
+print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_counts()[1])
+print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
