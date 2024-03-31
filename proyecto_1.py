@@ -45,3 +45,14 @@ dataframe.corr(method='kendall', numeric_only=False)
 dataframe.corr(method='pearson', min_periods=1, numeric_only=False)
 #### Spearman
 dataframe.corr(method='spearman', min_periods=1, numeric_only=False)
+# Data Visualization
+blood_pressure = dataframe.BloodPressure
+glucose = dataframe.Glucose
+outcome = dataframe.Outcome
+age = dataframe.Age
+
+scatter_plot = plt.scatter(glucose, age, c=outcome)
+plt.colorbar(scatter_plot)
+plt.xlabel("glucose")
+plt.ylabel("age")
+plt.show()
