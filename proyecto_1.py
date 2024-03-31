@@ -29,3 +29,12 @@ def remove_outliers (dataframe):
 dataframe = dataframe.dropna() # drop empty values
 dataframe = remove_outliers(dataframe) # drop outliers
 
+
+### Balance evaluation
+negative = dataframe.Outcome.value_counts()[0]
+positive = dataframe.Outcome.value_counts()[1]
+
+x = np.array(["Negative", "Positive"])
+y = np.array([negative,positive])
+plt.bar(x,y)
+plt.show()
