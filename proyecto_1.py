@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_score, recall_score
 
 ## Data loading
 dataframe = pandas.read_csv("data/diabetes.csv")
@@ -81,3 +83,4 @@ X, y = dataframe[["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "I
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=outcome)
 print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_counts()[1])
 print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
+
