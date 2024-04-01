@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, classification_report
 
 ## Data loading
 dataframe = pandas.read_csv("data/diabetes.csv")
@@ -83,4 +83,14 @@ X, y = dataframe[["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "I
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=outcome)
 print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_counts()[1])
 print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
+
+## Logistic Regression
+# Initialize the logistic regression model
+log_reg_model = LogisticRegression(max_iter=1000) #Check!!
+# Fit the model to the training set
+log_reg_model.fit(X_train, y_train)
+
+# Predictions
+y_pred = log_reg_model.predict(X_test)
+
 
