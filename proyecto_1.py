@@ -26,7 +26,19 @@ def remove_outliers (dataframe):
         dataframe = dataframe.drop(outliers.index)
     return dataframe
 
-dataframe = dataframe.dropna() # drop empty values
+def remove_zeros_from_column(dataframe, column_name):
+    dataframe[column_name].replace(0, np.NaN, inplace=True)
+    mean = dataframe[column_name].mean()
+    print(mean)
+    dataframe[column_name].replace(np.NaN, mean, inplace=True) 
+
+remove_zeros_from_column(dataframe, 'Glucose')
+remove_zeros_from_column(dataframe, 'BloodPressure')
+remove_zeros_from_column(dataframe, 'SkinThickness')
+remove_zeros_from_column(dataframe, 'Insulin')
+remove_zeros_from_column(dataframe, 'BMI')
+remove_zeros_from_column(dataframe, 'Age')
+
 dataframe = remove_outliers(dataframe) # drop outliers
 
 
