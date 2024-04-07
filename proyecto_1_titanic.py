@@ -40,3 +40,14 @@ def remove_nan_from_column(dataframe, column_name):
 
 remove_nan_from_column(dataframe, 'Age')
 dataframe = remove_outliers(dataframe, ['Age', 'Fare']) # drop outliers
+### Balance evaluation
+negative = dataframe.Survived.value_counts()[0]
+positive = dataframe.Survived.value_counts()[1]
+
+print(negative)
+print(positive)
+
+x = np.array(["Did not survive", "Survived"])
+y = np.array([negative,positive])
+plt.bar(x,y)
+plt.show()
