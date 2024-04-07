@@ -128,3 +128,21 @@ log_reg_model.fit(X_train, y_train)
 
 # Predictions
 y_pred = log_reg_model.predict(X_test)
+
+## Metrics Evaluations
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+# Precision
+precision = precision_score(y_test, y_pred)
+print("Precision:", precision)
+
+# Recall
+recall = recall_score(y_test, y_pred)
+print("Recall:", recall)
+
+# Classification Report
+
+print(classification_report(y_test, y_pred))
