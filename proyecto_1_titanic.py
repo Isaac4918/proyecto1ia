@@ -9,3 +9,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 ## Data loading
 dataframe = pandas.read_csv("data/titanic.csv")
+## Data analysis
+### One-hot encoding 
+# One-hot encoding categorical data for 'Pclass' and 'Sex' columns
+dataframe = pandas.get_dummies(dataframe, columns=['Pclass', 'Sex','Embarked'], dtype=int)
