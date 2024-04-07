@@ -1,13 +1,13 @@
 ## Imports
 import pandas
 import matplotlib.pyplot as plt
+import seaborn as sns
 from math import sqrt
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import precision_score, recall_score, classification_report
+from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
 
 ## Data loading
 dataframe = pandas.read_csv("data/diabetes.csv")
@@ -97,29 +97,109 @@ print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_c
 print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
 
 ## Logistic Regression
-# Initialize the logistic regression model
+# Standardize features
+scaler = StandardScaler()
 
-log_reg_model = LogisticRegression(max_iter=1000) #Check!!
-# Fit the model to the training set
-log_reg_model.fit(X_train, y_train)
+# Scale the training and testing features usign the same scaler
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-# Predictions
-y_pred = log_reg_model.predict(X_test)
+# Define the parameter grid
+param_grid = {
+    'C': [0.01, 0.1, 1, 10],
+    'solver': ['liblinear', 'lbfgs', 'sag', 'newton-cg']
+}
 
-## Metrics Evaluations
+# Initialize GridSearchCV with LogisticRegression estimator
+grid_search = GridSearchCV(estimator=LogisticRegression(max_iter=1000), param_grid=param_grid, cv=5, scoring='accuracy')
 
-# Accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
+# Print results of all parameter combinations
+results = grid_search.fit(X_train_scaled, y_train).cv_results_
+for mean_score, params in zip(results["mean_test_score"], results["params"]):
+    print("Parameters:", params)
+    print("Mean Accuracy:", mean_score)
+    # Train model with current parameters
+    current_model = LogisticRegression(**params, max_iter=1000)
+    current_model.fit(X_train_scaled, y_train)
+    # Predictions
+    y_pred = current_model.predict(X_test_scaled)
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
 
-# Precision
-precision = precision_score(y_test, y_pred)
-print("Precision:", precision)
+    # ROC curve
+    fpr, tpr, _ = roc_curve(y_test, current_model.predict_proba(X_test_scaled)[:,1])
+    roc_auc = roc_auc_score(y_test, y_pred)
+    
+    # Confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    # Print metrics
+    print("Accuracy:", accuracy)
+    print("Precision:", precision)
+    print("Recall:", recall)
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+    print("ROC AUC Score:", roc_auc)
+    print("Confusion Matrix:")
+    print(conf_matrix)
+    print("=" * 50)
 
-# Recall
-recall = recall_score(y_test, y_pred)
-print("Recall:", recall)
+    # Plot ROC curve
+    plt.figure()
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+    
+    # Plot heatmap for confusion matrix
+    plt.figure()
+    sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted Labels")
+    plt.ylabel("True Labels")
+    plt.show()
 
-# Classification Report
+# Get the best estimator
+best_model = grid_search.best_estimator_
 
-print(classification_report(y_test, y_pred))
+# Print best parameters and metrics
+print("Best Parameters:", grid_search.best_params_)
+print("Best Accuracy:", grid_search.best_score_)
+print("Best Model Accuracy:", accuracy_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Precision:", precision_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Recall:", recall_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Classification Report:")
+print(classification_report(y_test, best_model.predict(X_test_scaled)))
+
+# ROC curve for the best model
+fpr, tpr, _ = roc_curve(y_test, best_model.predict_proba(X_test_scaled)[:,1])
+roc_auc = roc_auc_score(y_test, best_model.predict(X_test_scaled))
+
+# Plot ROC curve for the best model
+plt.figure()
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (Best Model)')
+plt.legend(loc="lower right")
+plt.show()
+
+# Confusion matrix for the best model
+best_model_conf_matrix = confusion_matrix(y_test, best_model.predict(X_test_scaled))
+
+# Plot heatmap for the best model confusion matrix
+plt.figure()
+sns.heatmap(best_model_conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+plt.title("Confusion Matrix (Best Model)")
+plt.xlabel("Predicted Labels")
+plt.ylabel("True Labels")
+plt.show()
