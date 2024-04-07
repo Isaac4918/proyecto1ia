@@ -10,45 +10,46 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
 
 ## Data loading
-dataframe = pandas.read_csv("data/diabetes.csv")
+dataframe = pandas.read_csv("data/titanic.csv")
 ## Data analysis
+### One-hot encoding 
+# One-hot encoding categorical data for 'Pclass' and 'Sex' columns
+dataframe = pandas.get_dummies(dataframe, columns=['Pclass', 'Sex','Embarked'], dtype=int)
+### Dropping columns
+# Drop unnecessary columns
+dataframe.drop(['Cabin','PassengerId','Name','Ticket'], axis='columns', inplace=True)
 ### Outliers and invalid values
 def interquartile_range(variable, dataframe):
     Q1 = dataframe[variable].quantile(0.25)
     Q3 = dataframe[variable].quantile(0.75)
     return (Q1, Q3, Q3 - Q1)
 
-def remove_outliers (dataframe):
+
+def remove_outliers(dataframe: pandas.DataFrame, dataframe_columns):
     threshold = 1.5
-    for i in range(len(dataframe.columns)-1):
-        Q1 = interquartile_range(dataframe.columns[i], dataframe)[0]
-        Q3 = interquartile_range(dataframe.columns[i], dataframe)[1]
-        IQR = interquartile_range(dataframe.columns[i], dataframe)[2]
-        outliers = dataframe[(dataframe[dataframe.columns[i]] < Q1 - threshold * IQR) | (dataframe[dataframe.columns[i]] > Q3 + threshold * IQR)]
-        dataframe = dataframe.drop(outliers.index)
+
+    for i in range(len(dataframe_columns)):
+        (Q1, Q3, IQR) = interquartile_range(dataframe_columns[i], dataframe)
+        low_outliers = dataframe[dataframe[dataframe_columns[i]] < Q1 - threshold * IQR]
+        dataframe = dataframe.drop(low_outliers.index)
+        high_outliers = dataframe[dataframe[dataframe_columns[i]] > Q3 + threshold * IQR]
+        dataframe = dataframe.drop(high_outliers.index)
     return dataframe
 
-def remove_zeros_from_column(dataframe, column_name):
-    dataframe[column_name].replace(0, np.NaN, inplace=True)
+def remove_nan_from_column(dataframe, column_name):
     mean = dataframe[column_name].mean()
-    print(mean)
     dataframe[column_name].replace(np.NaN, mean, inplace=True) 
 
-remove_zeros_from_column(dataframe, 'Glucose')
-remove_zeros_from_column(dataframe, 'BloodPressure')
-remove_zeros_from_column(dataframe, 'SkinThickness')
-remove_zeros_from_column(dataframe, 'Insulin')
-remove_zeros_from_column(dataframe, 'BMI')
-remove_zeros_from_column(dataframe, 'Age')
-
-dataframe = remove_outliers(dataframe) # drop outliers
-
-
+remove_nan_from_column(dataframe, 'Age')
+dataframe = remove_outliers(dataframe, ['Age', 'Fare']) # drop outliers
 ### Balance evaluation
-negative = dataframe.Outcome.value_counts()[0]
-positive = dataframe.Outcome.value_counts()[1]
+negative = dataframe.Survived.value_counts()[0]
+positive = dataframe.Survived.value_counts()[1]
 
-x = np.array(["Negative", "Positive"])
+print(negative)
+print(positive)
+
+x = np.array(["Did not survive", "Survived"])
 y = np.array([negative,positive])
 plt.bar(x,y)
 plt.show()
@@ -60,38 +61,60 @@ dataframe.corr(method='pearson', min_periods=1, numeric_only=False)
 #### Spearman
 dataframe.corr(method='spearman', min_periods=1, numeric_only=False)
 # Data Visualization
-blood_pressure = dataframe.BloodPressure
+outcome = dataframe.Survived
+fare = dataframe.Fare
 age = dataframe.Age
-glucose = dataframe.Glucose
-outcome = dataframe.Outcome
-bmi = dataframe.BMI
-insulin = dataframe.Insulin
+parch = dataframe.Parch
 
-scatter_plot = plt.scatter(glucose, age, c=outcome)
-plt.colorbar(scatter_plot)
-plt.xlabel("glucose")
-plt.ylabel("age")
+female_survivors = len(dataframe.query("Sex_female==1 and Survived==1"))
+female_deaths = len(dataframe.query("Sex_female==1 and Survived==0"))
+all_females = dataframe.Sex_female.value_counts()[1]
+
+male_survivors = len(dataframe.query("Sex_female==0 and Survived==1"))
+male_deaths = len(dataframe.query("Sex_female==0 and Survived==0"))
+all_males = dataframe.Sex_female.value_counts()[0]
+
+# Class 1 Tickets
+c1_survivors = len(dataframe.query("Pclass_1==1 and Survived==1"))
+c1_deaths = len(dataframe.query("Pclass_1==1 and Survived==0"))
+
+# Class 2 Tickets
+c2_survivors = len(dataframe.query("Pclass_2==1 and Survived==1"))
+c2_deaths = len(dataframe.query("Pclass_2==1 and Survived==0"))
+
+# Class 3 Tickets
+c3_survivors = len(dataframe.query("Pclass_3==1 and Survived==1"))
+c3_deaths = len(dataframe.query("Pclass_3==1 and Survived==0"))
+
+# Bar Plots
+x = np.array(["Did not survive", "Survived"])
+y_female = np.array([female_deaths,female_survivors])
+y_male = np.array([male_deaths,male_survivors])
+p1 = plt.bar(x, y_female, color='hotpink')
+p2 = plt.bar(x, y_male, bottom=y_female, color='lightseagreen')
+plt.title('Survivor amount by gender')
+plt.legend((p1[0], p2[0]), ('Female', 'Male'))
 plt.show()
 
-scatter_plot2 = plt.scatter(blood_pressure, glucose, c=outcome)
+y_class_1 = np.array([c1_deaths,c1_survivors])
+y_class_2 = np.array([c2_deaths,c2_survivors])
+y_class_3 = np.array([c3_deaths,c3_survivors])
+p3 = plt.bar(x, y_class_1, color='darkorange')
+p4 = plt.bar(x, y_class_2, bottom=y_class_1, color ='gold')
+p5 = plt.bar(x, y_class_3, bottom=y_class_2,color='cornflowerblue')
+plt.title('Survivor amount by ticket class')
+plt.legend((p3[0], p4[0], p5[0]), ('First Class', 'Second Class', 'Third Class'))
+plt.show()
+
+# Scatter plot
+scatter_plot2 = plt.scatter(age, fare, c=outcome)
 plt.colorbar(scatter_plot2)
-plt.xlabel("blood pressure")
-plt.ylabel("glucose")
+plt.xlabel("age")
+plt.ylabel("fare")
 plt.show()
 
-scatter_plot3 = plt.scatter(insulin, glucose, c=outcome)
-plt.colorbar(scatter_plot3)
-plt.xlabel("insulin")
-plt.ylabel("glucose")
-plt.show()
-
-scatter_plot4 = plt.scatter(bmi, glucose, c=outcome)
-plt.colorbar(scatter_plot4)
-plt.xlabel("bmi")
-plt.ylabel("glucose")
-plt.show()
 ## Dataset splitting
-X, y = dataframe[["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"]], dataframe["Outcome"]
+X, y = dataframe[["Age", "SibSp", "Parch", "Fare", "Pclass_1", "Pclass_2", "Pclass_3", "Sex_female", "Sex_male", "Embarked_C", "Embarked_Q", "Embarked_S"]], dataframe["Survived"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=outcome)
 print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_counts()[1])
 print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
@@ -127,7 +150,6 @@ for mean_score, params in zip(results["mean_test_score"], results["params"]):
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
-
     # ROC curve
     fpr, tpr, _ = roc_curve(y_test, current_model.predict_proba(X_test_scaled)[:,1])
     roc_auc = roc_auc_score(y_test, y_pred)
