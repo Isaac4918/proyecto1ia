@@ -98,6 +98,7 @@ print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_coun
 
 ## Logistic Regression
 # Initialize the logistic regression model
+
 log_reg_model = LogisticRegression(max_iter=1000) #Check!!
 # Fit the model to the training set
 log_reg_model.fit(X_train, y_train)
