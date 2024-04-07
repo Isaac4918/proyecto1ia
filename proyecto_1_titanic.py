@@ -58,3 +58,55 @@ dataframe.corr(method='kendall', numeric_only=False)
 dataframe.corr(method='pearson', min_periods=1, numeric_only=False)
 #### Spearman
 dataframe.corr(method='spearman', min_periods=1, numeric_only=False)
+# Data Visualization
+outcome = dataframe.Survived
+fare = dataframe.Fare
+age = dataframe.Age
+parch = dataframe.Parch
+
+female_survivors = len(dataframe.query("Sex_female==1 and Survived==1"))
+female_deaths = len(dataframe.query("Sex_female==1 and Survived==0"))
+all_females = dataframe.Sex_female.value_counts()[1]
+
+male_survivors = len(dataframe.query("Sex_female==0 and Survived==1"))
+male_deaths = len(dataframe.query("Sex_female==0 and Survived==0"))
+all_males = dataframe.Sex_female.value_counts()[0]
+
+# Class 1 Tickets
+c1_survivors = len(dataframe.query("Pclass_1==1 and Survived==1"))
+c1_deaths = len(dataframe.query("Pclass_1==1 and Survived==0"))
+
+# Class 2 Tickets
+c2_survivors = len(dataframe.query("Pclass_2==1 and Survived==1"))
+c2_deaths = len(dataframe.query("Pclass_2==1 and Survived==0"))
+
+# Class 3 Tickets
+c3_survivors = len(dataframe.query("Pclass_3==1 and Survived==1"))
+c3_deaths = len(dataframe.query("Pclass_3==1 and Survived==0"))
+
+# Bar Plots
+x = np.array(["Did not survive", "Survived"])
+y_female = np.array([female_deaths,female_survivors])
+y_male = np.array([male_deaths,male_survivors])
+p1 = plt.bar(x, y_female, color='hotpink')
+p2 = plt.bar(x, y_male, bottom=y_female, color='lightseagreen')
+plt.title('Survivor amount by gender')
+plt.legend((p1[0], p2[0]), ('Female', 'Male'))
+plt.show()
+
+y_class_1 = np.array([c1_deaths,c1_survivors])
+y_class_2 = np.array([c2_deaths,c2_survivors])
+y_class_3 = np.array([c3_deaths,c3_survivors])
+p3 = plt.bar(x, y_class_1, color='darkorange')
+p4 = plt.bar(x, y_class_2, bottom=y_class_1, color ='gold')
+p5 = plt.bar(x, y_class_3, bottom=y_class_2,color='cornflowerblue')
+plt.title('Survivor amount by ticket class')
+plt.legend((p3[0], p4[0], p5[0]), ('First Class', 'Second Class', 'Third Class'))
+plt.show()
+
+# Scatter plot
+scatter_plot2 = plt.scatter(age, fare, c=outcome)
+plt.colorbar(scatter_plot2)
+plt.xlabel("age")
+plt.ylabel("fare")
+plt.show()
