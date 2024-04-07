@@ -3,7 +3,7 @@ import pandas
 import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
@@ -97,29 +97,18 @@ print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_c
 print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
 
 ## Logistic Regression
-# Initialize the logistic regression model
+# Standardize features
+scaler = StandardScaler()
 
-log_reg_model = LogisticRegression(max_iter=1000) #Check!!
-# Fit the model to the training set
-log_reg_model.fit(X_train, y_train)
+# Scale the training and testing features usign the same scaler
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-# Predictions
-y_pred = log_reg_model.predict(X_test)
+# Define the parameter grid
+param_grid = {
+    'C': [0.01, 0.1, 1, 10],
+    'solver': ['liblinear', 'lbfgs', 'sag', 'newton-cg']
+}
 
-## Metrics Evaluations
-
-# Accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
-
-# Precision
-precision = precision_score(y_test, y_pred)
-print("Precision:", precision)
-
-# Recall
-recall = recall_score(y_test, y_pred)
-print("Recall:", recall)
-
-# Classification Report
-
-print(classification_report(y_test, y_pred))
+# Initialize GridSearchCV with LogisticRegression estimator
+grid_search = GridSearchCV(estimator=LogisticRegression(max_iter=1000), param_grid=param_grid, cv=5, scoring='accuracy')
