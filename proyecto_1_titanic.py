@@ -51,3 +51,10 @@ x = np.array(["Did not survive", "Survived"])
 y = np.array([negative,positive])
 plt.bar(x,y)
 plt.show()
+### Pairwise correlation
+#### Kendall
+dataframe.corr(method='kendall', numeric_only=False)
+#### Pearson
+dataframe.corr(method='pearson', min_periods=1, numeric_only=False)
+#### Spearman
+dataframe.corr(method='spearman', min_periods=1, numeric_only=False)
