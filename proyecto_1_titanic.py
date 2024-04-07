@@ -1,13 +1,13 @@
 ## Imports
 import pandas
 import matplotlib.pyplot as plt
+import seaborn as sns
 from math import sqrt
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import precision_score, recall_score, classification_report
+from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
 
 ## Data loading
 dataframe = pandas.read_csv("data/titanic.csv")
@@ -150,13 +150,42 @@ for mean_score, params in zip(results["mean_test_score"], results["params"]):
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
+    # ROC curve
+    fpr, tpr, _ = roc_curve(y_test, current_model.predict_proba(X_test_scaled)[:,1])
+    roc_auc = roc_auc_score(y_test, y_pred)
+    
+    # Confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
     # Print metrics
     print("Accuracy:", accuracy)
     print("Precision:", precision)
     print("Recall:", recall)
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
+    print("ROC AUC Score:", roc_auc)
+    print("Confusion Matrix:")
+    print(conf_matrix)
     print("=" * 50)
+
+    # Plot ROC curve
+    plt.figure()
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+    
+    # Plot heatmap for confusion matrix
+    plt.figure()
+    sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted Labels")
+    plt.ylabel("True Labels")
+    plt.show()
 
 # Get the best estimator
 best_model = grid_search.best_estimator_
@@ -169,3 +198,30 @@ print("Best Model Precision:", precision_score(y_test, best_model.predict(X_test
 print("Best Model Recall:", recall_score(y_test, best_model.predict(X_test_scaled)))
 print("Best Model Classification Report:")
 print(classification_report(y_test, best_model.predict(X_test_scaled)))
+
+# ROC curve for the best model
+fpr, tpr, _ = roc_curve(y_test, best_model.predict_proba(X_test_scaled)[:,1])
+roc_auc = roc_auc_score(y_test, best_model.predict(X_test_scaled))
+
+# Plot ROC curve for the best model
+plt.figure()
+plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (Best Model)')
+plt.legend(loc="lower right")
+plt.show()
+
+# Confusion matrix for the best model
+best_model_conf_matrix = confusion_matrix(y_test, best_model.predict(X_test_scaled))
+
+# Plot heatmap for the best model confusion matrix
+plt.figure()
+sns.heatmap(best_model_conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+plt.title("Confusion Matrix (Best Model)")
+plt.xlabel("Predicted Labels")
+plt.ylabel("True Labels")
+plt.show()
