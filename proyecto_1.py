@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, classification_report
+from sklearn.neighbors import KNeighborsClassifier
 
 ## Data loading
 dataframe = pandas.read_csv("data/diabetes.csv")
@@ -105,7 +106,7 @@ log_reg_model.fit(X_train, y_train)
 # Predictions
 y_pred = log_reg_model.predict(X_test)
 
-## Metrics Evaluations
+## Metrics Evaluations for Logistic Regression
 
 # Accuracy
 accuracy = accuracy_score(y_test, y_pred)
@@ -121,4 +122,32 @@ print("Recall:", recall)
 
 # Classification Report
 
+print(classification_report(y_test, y_pred))
+
+
+# KNN Model
+
+# Initialize the KNN model
+knn_model = KNeighborsClassifier(n_neighbors=13)
+# Fit the model to the training set
+knn_model.fit(X_train, y_train)
+
+# Predictions
+y_pred = knn_model.predict(X_test)
+
+## Metrics Evaluations for KNN
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy (KNN):", accuracy)
+
+# Precision
+precision = precision_score(y_test, y_pred)
+print("Precision (KNN):", precision)
+
+# Recall
+recall = recall_score(y_test, y_pred)
+print("Recall (KNN):", recall)
+
+# Classification Report
 print(classification_report(y_test, y_pred))
