@@ -103,3 +103,10 @@ p5 = plt.bar(x, y_class_3, bottom=y_class_2,color='cornflowerblue')
 plt.title('Survivor amount by ticket class')
 plt.legend((p3[0], p4[0], p5[0]), ('First Class', 'Second Class', 'Third Class'))
 plt.show()
+
+# Scatter plot
+scatter_plot2 = plt.scatter(age, fare, c=outcome)
+plt.colorbar(scatter_plot2)
+plt.xlabel("age")
+plt.ylabel("fare")
+plt.show()
