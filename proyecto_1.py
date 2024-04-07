@@ -134,3 +134,15 @@ for mean_score, params in zip(results["mean_test_score"], results["params"]):
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
     print("=" * 50)
+
+# Get the best estimator
+best_model = grid_search.best_estimator_
+
+# Print best parameters and metrics
+print("Best Parameters:", grid_search.best_params_)
+print("Best Accuracy:", grid_search.best_score_)
+print("Best Model Accuracy:", accuracy_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Precision:", precision_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Recall:", recall_score(y_test, best_model.predict(X_test_scaled)))
+print("Best Model Classification Report:")
+print(classification_report(y_test, best_model.predict(X_test_scaled)))
