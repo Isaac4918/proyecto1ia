@@ -112,3 +112,25 @@ param_grid = {
 
 # Initialize GridSearchCV with LogisticRegression estimator
 grid_search = GridSearchCV(estimator=LogisticRegression(max_iter=1000), param_grid=param_grid, cv=5, scoring='accuracy')
+
+# Print results of all parameter combinations
+results = grid_search.fit(X_train_scaled, y_train).cv_results_
+for mean_score, params in zip(results["mean_test_score"], results["params"]):
+    print("Parameters:", params)
+    print("Mean Accuracy:", mean_score)
+    # Train model with current parameters
+    current_model = LogisticRegression(**params, max_iter=1000)
+    current_model.fit(X_train_scaled, y_train)
+    # Predictions
+    y_pred = current_model.predict(X_test_scaled)
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    # Print metrics
+    print("Accuracy:", accuracy)
+    print("Precision:", precision)
+    print("Recall:", recall)
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+    print("=" * 50)
