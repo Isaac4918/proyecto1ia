@@ -110,3 +110,9 @@ plt.colorbar(scatter_plot2)
 plt.xlabel("age")
 plt.ylabel("fare")
 plt.show()
+
+## Dataset splitting
+X, y = dataframe[["Age", "SibSp", "Parch", "Fare", "Pclass_1", "Pclass_2", "Pclass_3", "Sex_female", "Sex_male", "Embarked_C", "Embarked_Q", "Embarked_S"]], dataframe["Survived"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=outcome)
+print("training set data proportion: ",y_train.value_counts()[0]/y_train.value_counts()[1])
+print("testing set data proportion: ",y_test.value_counts()[0]/y_test.value_counts()[1])
