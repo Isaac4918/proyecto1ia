@@ -8,6 +8,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 ## Data loading
 dataframe = pandas.read_csv("data/titanic.csv")
@@ -225,3 +227,96 @@ plt.title("Confusion Matrix (Best Model)")
 plt.xlabel("Predicted Labels")
 plt.ylabel("True Labels")
 plt.show()
+
+
+## K Nearest Neighbors
+print("=" * 50)
+print("K Nearest Neighbors")
+
+k_values = [3, 5, 7, 9, 11, 13, 15]
+
+print("Unscaled Features")
+
+for k in k_values:
+    print(f"K={k}")
+    knn = KNeighborsClassifier(k)
+
+    # Fit the model to the training set
+    knn.fit(X_train, y_train)
+
+    # Predictions
+    y_pred = knn.predict(X_test)
+
+    # Calculate metrics
+    # Accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy for k={k}: {accuracy}")
+
+    # Precision
+    precision = precision_score(y_test, y_pred)
+    print(f"Precision for k={k}: {precision}")
+
+    # Recall 
+    recall = recall_score(y_test, y_pred)
+    print(f"Recall for k={k}: {recall}")
+
+    # F1 Score
+    f1 = 2 * (precision * recall) / (precision + recall)
+    print(f"F1 Score for k={k}: {f1}")
+
+    # Confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    print(f"Confusion Matrix for k={k}:")
+    print(conf_matrix)
+    print("\n")
+
+    # Plot heatmap for confusion matrix
+    plt.figure()
+    sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+    plt.title(f"Confusion Matrix for k={k}")
+    plt.xlabel("Predicted Labels")
+    plt.ylabel("True Labels")
+    plt.show()
+
+print("Scaled Features")
+
+for k in k_values:
+    print(f"K={k}")
+    knn = KNeighborsClassifier(k)
+
+    # Fit the model to the training set
+    knn.fit(X_train_scaled, y_train)
+
+    # Predictions
+    y_pred = knn.predict(X_test_scaled)
+
+    # Calculate metrics
+    # Accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy for k={k}: {accuracy}")
+
+    # Precision
+    precision = precision_score(y_test, y_pred)
+    print(f"Precision for k={k}: {precision}")
+
+    # Recall 
+    recall = recall_score(y_test, y_pred)
+    print(f"Recall for k={k}: {recall}")
+
+    # F1 Score
+    f1 = 2 * (precision * recall) / (precision + recall)
+    print(f"F1 Score for k={k}: {f1}")
+
+    # Confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    print(f"Confusion Matrix for k={k}:")
+    print(conf_matrix)
+    print("\n")
+
+    # Plot heatmap for confusion matrix
+    plt.figure()
+    sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+    plt.title(f"Confusion Matrix for k={k}")
+    plt.xlabel("Predicted Labels")
+    plt.ylabel("True Labels")
+    plt.show()
