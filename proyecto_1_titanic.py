@@ -10,6 +10,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
+import torch
+from torch import nn, optim
+from torch.utils.data import DataLoader, TensorDataset
 
 ## Data loading
 dataframe = pandas.read_csv("data/titanic.csv")
@@ -320,3 +323,100 @@ for k in k_values:
     plt.xlabel("Predicted Labels")
     plt.ylabel("True Labels")
     plt.show()
+
+    ## Neural Network
+print("=/" * 50)
+print("Neural Network")
+
+# neural network with torch running on the gpu
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+X_train_tensor = torch.tensor(X_train_scaled, dtype=torch.float32).to(device)
+y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).to(device)
+X_test_tensor = torch.tensor(X_test_scaled, dtype=torch.float32).to(device)
+y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).to(device)
+
+# Create a Dataset from the tensors
+train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+
+# Create a DataLoader from the dataset
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+# Define the neural network model
+class Net(nn.Module):
+    def __init__(self, hidden_layer_size):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(X_train.shape[1], hidden_layer_size)
+        self.fc2 = nn.Linear(hidden_layer_size, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.sigmoid(self.fc2(x))
+        return x
+    
+# Define a loss function
+criterion = nn.BCELoss()
+
+# Define the hyperparameters based on param_grid
+
+layers = [5, 10, 15, 20]
+alphas = [0.01, 0.1, 1, 10]
+
+for layer in layers:
+    for alpha in alphas:
+        print("=" * 50)
+        print(f"Hidden Layer Size: {layer}")
+        print(f"Learning Rate: {alpha}")
+        print("\n")
+        model = Net(layer).to(device)
+        optimizer = optim.Adam(model.parameters(), lr=alpha)
+
+        # Train the model
+        epochs = 100
+
+        for epoch in range(epochs):
+            model.train()
+            for i, data in enumerate(train_loader):
+                inputs, labels = data
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels.view(-1, 1))
+                loss.backward()
+                optimizer.step()
+
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch} Loss: {loss.item()}")
+
+        # Evaluate the model
+        model.eval()
+        y_pred = model(X_test_tensor).cpu().detach().numpy()
+        y_pred = np.where(y_pred > 0.5, 1, 0)
+
+        # Calculate metrics
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"Accuracy: {accuracy}")
+
+        precision = precision_score(y_test, y_pred)
+        print(f"Precision: {precision}")
+
+        recall = recall_score(y_test, y_pred)
+        print(f"Recall: {recall}")
+
+        # F1 Score
+        f1 = 2 * (precision * recall) / (precision + recall)
+        print(f"F1 Score: {f1}")
+
+        # Confusion matrix
+        conf_matrix = confusion_matrix(y_test, y_pred)
+        print("Confusion Matrix:")
+        print(conf_matrix)
+
+        # Plot heatmap for confusion matrix
+        plt.figure()
+        sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+        plt.title("Confusion Matrix")
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
+        plt.show()

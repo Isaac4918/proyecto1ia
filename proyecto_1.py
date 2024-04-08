@@ -10,7 +10,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_score, recall_score, classification_report, accuracy_score,  roc_auc_score, roc_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
+import torch
+from torch import nn, optim
+from torch.utils.data import DataLoader, TensorDataset
 
 ## Data loading
 dataframe = pandas.read_csv("data/diabetes.csv")
@@ -303,82 +305,95 @@ for k in k_values:
 print("=/" * 50)
 print("Neural Network")
 
-# Define the parameter grid
-param_grid = {
-    'hidden_layer_sizes': [(10,), (20,), (30,), (40,), (50,)],
-    'activation': ['identity', 'logistic', 'tanh', 'relu'],
-    'solver': ['lbfgs', 'sgd', 'adam'],
-    'alpha': [0.0001, 0.001, 0.01, 0.1],
-    'learning_rate': ['constant', 'invscaling', 'adaptive']
-}
+# neural network with torch running on the gpu
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Initialize GridSearchCV with MLPClassifier estimator
-grid_search = GridSearchCV(estimator=MLPClassifier(max_iter=1000), param_grid=param_grid, cv=5, scoring='accuracy')
+X_train_tensor = torch.tensor(X_train_scaled, dtype=torch.float32).to(device)
+y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).to(device)
+X_test_tensor = torch.tensor(X_test_scaled, dtype=torch.float32).to(device)
+y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).to(device)
 
-# Print results of all parameter combinations
-results = grid_search.fit(X_train_scaled, y_train).cv_results_
+# Create a Dataset from the tensors
+train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
-for mean_score, params in zip(results["mean_test_score"], results["params"]):
-    print("Parameters:", params)
-    print("Mean Accuracy:", mean_score)
-    # Train model with current parameters
-    current_model = MLPClassifier(**params, max_iter=1000)
-    current_model.fit(X_train_scaled, y_train)
-    # Predictions
-    y_pred = current_model.predict(X_test_scaled)
-    # Calculate metrics
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
+# Create a DataLoader from the dataset
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    # ROC curve
-    fpr, tpr, _ = roc_curve(y_test, current_model.predict_proba(X_test_scaled)[:,1])
-    roc_auc = roc_auc_score(y_test, y_pred)
+# Define the neural network model
+class Net(nn.Module):
+    def __init__(self, hidden_layer_size):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(X_train.shape[1], hidden_layer_size)
+        self.fc2 = nn.Linear(hidden_layer_size, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.sigmoid(self.fc2(x))
+        return x
     
-    # Confusion matrix
-    conf_matrix = confusion_matrix(y_test, y_pred)
-    # Print metrics
-    print("Accuracy:", accuracy)
-    print("Precision:", precision)
-    print("Recall:", recall)
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred))
-    print("ROC AUC Score:", roc_auc)
-    print("Confusion Matrix:")
-    print(conf_matrix)
-    print("=" * 50)
+# Define a loss function
+criterion = nn.BCELoss()
 
-    # Plot ROC curve
-    plt.figure()
-    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc="lower right")
-    plt.show()
-    
-    # Plot heatmap for confusion matrix
-    plt.figure()
-    sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
-    plt.title("Confusion Matrix")
-    plt.xlabel("Predicted Labels")
-    plt.ylabel("True Labels")
-    plt.show()
+# Define the hyperparameters based on param_grid
 
-# Get the best estimator
-best_model = grid_search.best_estimator_
+layers = [5, 10, 15, 20]
+alphas = [0.01, 0.1, 1, 10]
 
-# Print best parameters and metrics
-print("Best Parameters:", grid_search.best_params_)
-print("Best Accuracy:", grid_search.best_score_)
-print("Best Model Accuracy:", accuracy_score(y_test, best_model.predict(X_test_scaled)))
-print("Best Model Precision:", precision_score(y_test, best_model.predict(X_test_scaled)))
-print("Best Model Recall:", recall_score(y_test, best_model.predict(X_test_scaled)))
-print("Best Model Classification Report:")
-print(classification_report(y_test, best_model.predict(X_test_scaled)))
+for layer in layers:
+    for alpha in alphas:
+        print("=" * 50)
+        print(f"Hidden Layer Size: {layer}")
+        print(f"Learning Rate: {alpha}")
+        print("\n")
+        model = Net(layer).to(device)
+        optimizer = optim.Adam(model.parameters(), lr=alpha)
 
-# ROC curve for the best model
-fpr, tpr, _ = roc_curve(y_test, best_model.predict_proba(X_test_scaled)[:,1])
+        # Train the model
+        epochs = 100
+
+        for epoch in range(epochs):
+            model.train()
+            for i, data in enumerate(train_loader):
+                inputs, labels = data
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels.view(-1, 1))
+                loss.backward()
+                optimizer.step()
+
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch} Loss: {loss.item()}")
+
+        # Evaluate the model
+        model.eval()
+        y_pred = model(X_test_tensor).cpu().detach().numpy()
+        y_pred = np.where(y_pred > 0.5, 1, 0)
+
+        # Calculate metrics
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"Accuracy: {accuracy}")
+
+        precision = precision_score(y_test, y_pred)
+        print(f"Precision: {precision}")
+
+        recall = recall_score(y_test, y_pred)
+        print(f"Recall: {recall}")
+
+        # F1 Score
+        f1 = 2 * (precision * recall) / (precision + recall)
+        print(f"F1 Score: {f1}")
+
+        # Confusion matrix
+        conf_matrix = confusion_matrix(y_test, y_pred)
+        print("Confusion Matrix:")
+        print(conf_matrix)
+
+        # Plot heatmap for confusion matrix
+        plt.figure()
+        sns.heatmap(conf_matrix, annot=True, cmap="Blues", fmt="d", cbar=False)
+        plt.title("Confusion Matrix")
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
+        plt.show()
